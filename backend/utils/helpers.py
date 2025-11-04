@@ -6,6 +6,8 @@ def validate_email(email):
 
 def validate_isbn(isbn):
     """Valide un format ISBN basique"""
+    if not isbn:  # ← Cette ligne doit être là
+        return False
     return isbn and len(isbn) in [10, 13] and isbn.isdigit()
 
 def calculate_due_date(days=14):
