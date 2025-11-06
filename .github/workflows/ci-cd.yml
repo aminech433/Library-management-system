@@ -1,8 +1,5 @@
 name: CI/CD Pipeline - Library Management System
 
-# ═══════════════════════════════════════════════════════
-# DÉCLENCHEURS : Quand exécuter le pipeline
-# ═══════════════════════════════════════════════════════
 on:
   push:
     branches:
@@ -13,19 +10,10 @@ on:
       - main
       - develop
 
-# ═══════════════════════════════════════════════════════
-# VARIABLES D'ENVIRONNEMENT GLOBALES
-# ═══════════════════════════════════════════════════════
 env:
   PYTHON_VERSION: '3.10'
 
-# ═══════════════════════════════════════════════════════
-# JOBS DU PIPELINE
-# ═══════════════════════════════════════════════════════
 jobs:
-  # ─────────────────────────────────────────────────────
-  # JOB 1 : INITIATION
-  # ─────────────────────────────────────────────────────
   initiation:
     name: 🚀 Initialisation du Pipeline
     runs-on: ubuntu-latest
@@ -39,89 +27,74 @@ jobs:
           echo "║   👤 Déclenché par: ${{ github.actor }}                 ║"
           echo "║   🌿 Branche: ${{ github.ref_name }}                    ║"
           echo "╚══════════════════════════════════════════════════════════╝"
-          echo ""
-          echo "🔄 Étapes du pipeline:"
-          echo "  1️⃣  Initialisation (en cours)"
-          echo "  2️⃣  Tests unitaires avec Pytest"
-          echo "  3️⃣  Analyse qualité du code avec SonarQube"
 
-  # ─────────────────────────────────────────────────────
-  # JOB 2 : TESTS UNITAIRES AVEC PYTEST
-  # ─────────────────────────────────────────────────────
   tests-unitaires:
     name: 🧪 Tests Unitaires avec Pytest
     runs-on: ubuntu-latest
     needs: initiation
 
     steps:
-      # ─── 1. Récupérer le code ───
       - name: 📥 Checkout du code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # ─── 2. Configurer Python ───
       - name: 🐍 Configuration de Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # ─── 3. Installer les dépendances ───
       - name: 📥 Installation des dépendances
         working-directory: ./backend
         run: |
           echo "📦 Installation des dépendances..."
           pip install -r requirements.txt
-          echo "✅ Dépendances installées"
 
-      # ─── 4. Exécuter les tests avec Pytest ───
       - name: 🧪 Exécution des tests unitaires avec Pytest
         run: |
-          echo "╔══════════════════════════════════════════════════════════╗"
-          echo "║          🧪 LANCEMENT DES TESTS UNITAIRES               ║"
-          echo "╚══════════════════════════════════════════════════════════╝"
-          pytest --cov=backend --cov-report=xml --cov-report=term
+          echo "🧪 LANCEMENT DES TESTS UNITAIRES"
+          pytest --cov=backend --cov-report=xml --cov-report=term -v
 
-      # ─── 5. Upload du rapport de couverture ───
       - name: 📤 Upload du rapport de couverture
         uses: actions/upload-artifact@v4
         with:
           name: coverage-xml
           path: coverage.xml
+          retention-days: 1
 
-      # ─── 6. Résumé des tests ───
       - name: 📋 Résumé des tests
         run: |
-          echo ""
-          echo "╔══════════════════════════════════════════════════════════╗"
-          echo "║              📋 RÉSUMÉ DES TESTS UNITAIRES              ║"
-          echo "╚══════════════════════════════════════════════════════════╝"
           echo "✅ Tests exécutés avec succès"
           echo "📊 Rapport de couverture généré"
 
-  # ─────────────────────────────────────────────────────
-  # JOB 3 : QUALITÉ DU CODE AVEC SONARQUBE
-  # ─────────────────────────────────────────────────────
   qualite-du-code:
     name: 🔍 Analyse Qualité du Code (SonarQube)
     runs-on: ubuntu-latest
     needs: tests-unitaires
 
     steps:
-      # ─── 1. Récupérer le code ───
       - name: 📥 Checkout du code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ─── 2. Télécharger le rapport de couverture ───
       - name: 📥 Téléchargement du rapport de couverture
         uses: actions/download-artifact@v4
         with:
           name: coverage-xml
           path: ./
 
-      # ─── 3. Analyse SonarQube (VERSION CORRIGÉE) ───
+      - name: 🔍 Vérification du fichier coverage.xml
+        run: |
+          echo "📁 Contenu du dossier :"
+          ls -la
+          echo "📄 Vérification coverage.xml :"
+          if [ -f "coverage.xml" ]; then
+            echo "✅ coverage.xml trouvé"
+            head -5 coverage.xml
+          else
+            echo "❌ coverage.xml non trouvé"
+            exit 1
+          fi
+
       - name: 🔍 Analyse SonarQube
         uses: SonarSource/sonarqube-scan-action@v5.0.0
         env:
@@ -135,23 +108,6 @@ jobs:
             -Dsonar.sources=backend
             -Dsonar.coverage.minimumCoverage=10
 
-      # ─── 4. Résumé SonarQube ───
-      - name: 📊 Résumé de l'analyse SonarQube
-        run: |
-          echo ""
-          echo "╔══════════════════════════════════════════════════════════╗"
-          echo "║          🔍 ANALYSE SONARQUBE TERMINÉE                  ║"
-          echo "╚══════════════════════════════════════════════════════════╝"
-          echo ""
-          echo "📊 Métriques analysées:"
-          echo "   • Bugs"
-          echo "   • Vulnérabilités"
-          echo "   • Code Smells"
-          echo "   • Couverture de code"
-
-  # ─────────────────────────────────────────────────────
-  # JOB FINAL : RÉSUMÉ DU PIPELINE
-  # ─────────────────────────────────────────────────────
   pipeline-summary:
     name: 📋 Résumé du Pipeline
     runs-on: ubuntu-latest
@@ -161,12 +117,7 @@ jobs:
     steps:
       - name: 📊 Statut du Pipeline
         run: |
-          echo ""
-          echo "╔══════════════════════════════════════════════════════════╗"
-          echo "║          📊 RÉSUMÉ DU PIPELINE CI/CD                    ║"
-          echo "╚══════════════════════════════════════════════════════════╝"
-          echo ""
-          echo "📅 Date: $(date)"
+          echo "📊 RÉSUMÉ DU PIPELINE"
           echo "🌿 Branche: ${{ github.ref_name }}"
           echo "👤 Auteur: ${{ github.actor }}"
           echo ""
@@ -174,12 +125,11 @@ jobs:
           echo "   1️⃣  Initiation: ${{ needs.initiation.result }}"
           echo "   2️⃣  Tests unitaires: ${{ needs.tests-unitaires.result }}"
           echo "   3️⃣  Qualité du code: ${{ needs.qualite-du-code.result }}"
-          echo ""
 
           if [[ "${{ needs.tests-unitaires.result }}" == "success" && "${{ needs.qualite-du-code.result }}" == "success" ]]; then
-            echo "🎉 PIPELINE RÉUSSI! Tous les jobs sont passés avec succès."
+            echo "🎉 PIPELINE RÉUSSI!"
             exit 0
           else
-            echo "❌ PIPELINE ÉCHOUÉ! Veuillez vérifier les logs des jobs."
+            echo "❌ PIPELINE ÉCHOUÉ!"
             exit 1
           fi
