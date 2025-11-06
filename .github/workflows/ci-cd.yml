@@ -119,6 +119,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: coverage-xml
+          path: ./
 
       # ─── 3. Analyse SonarQube (VERSION CORRIGÉE) ───
       - name: 🔍 Analyse SonarQube
