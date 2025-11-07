@@ -33,3 +33,7 @@ pip install -r requirements.txt
 cd frontend
 npm install
 ```
+## 🧪 Tests & Qualité
+
+Des tests unitaires et d'intégration sont mis en place côté backend et frontend.  
+L'analyse statique du code est effectuée automatiquement à chaque push grâce à SonarCloud.
